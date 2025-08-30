@@ -17,6 +17,11 @@ class EnergyLog(Base):
     units = Column(Float, nullable=False)
     device_timestamp = Column(String, nullable=True)  # optional device-provided ts
     received_at = Column(DateTime, default=datetime.utcnow)
+    
+    # new fields
+    tx_hash = Column(String, nullable=True)
+    token_id = Column(Integer, nullable=True)
+    token_uri = Column(String, nullable=True)
 
 def init_db():
     Base.metadata.create_all(bind=engine)
