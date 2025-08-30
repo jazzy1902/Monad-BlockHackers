@@ -7,6 +7,7 @@ from web3 import Web3
 from sqlalchemy.orm import Session
 from db import SessionLocal, EnergyLog, init_db
 from datetime import datetime
+from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
@@ -38,6 +39,14 @@ contract = w3.eth.contract(address=Web3.to_checksum_address(CONTRACT_ADDRESS), a
 init_db()
 
 app = FastAPI(title="GreenChain Backend (Hybrid)")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Replace "*" with specific origins if needed
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
 
 # Dependency: DB session
 def get_db():
@@ -118,7 +127,10 @@ def log_energy(event: EnergyEventReq, db: Session = Depends(get_db)):
         wallet=event.wallet,
         units=event.units,
         device_timestamp=event.device_timestamp,
-        received_at=datetime.utcnow()
+        received_at=datetime.utcnow(),
+        tx_hash = None,
+        token_id = None,
+        token_uri = None
     )
     db.add(log)
     db.commit()
@@ -134,6 +146,23 @@ def log_energy(event: EnergyEventReq, db: Session = Depends(get_db)):
             "from": backend_account.address
         })
         tx_hash = build_and_send_tx(txn)
+
+        # wait for receipt & parse logs
+        receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+        logs = contract.events.Transfer().process_receipt(receipt)  # ERC721 emits Transfer(from, to, tokenId)
+        token_id = None
+        if logs:
+            token_id = logs[0]["args"]["tokenId"]
+
+        token_uri = None
+        if token_id is not None:
+            token_uri = contract.functions.tokenURI(token_id).call()
+
+        # update DB
+        log.tx_hash = tx_hash
+        log.token_id = token_id
+        log.token_uri = token_uri
+        db.commit()
     except Exception as ex:
         # Note: We still keep the DB log; respond with chain error
         return {
@@ -154,13 +183,37 @@ def log_energy(event: EnergyEventReq, db: Session = Depends(get_db)):
     }
 
 
+from sqlalchemy import func
+
+@app.get("/api/leaderboard")
+def leaderboard(limit: int = 10, db: Session = Depends(get_db)):
+    rows = (
+        db.query(EnergyLog.wallet, func.sum(EnergyLog.units).label("total_units"))
+        .group_by(EnergyLog.wallet)
+        .order_by(func.sum(EnergyLog.units).desc())
+        .limit(limit)
+        .all()
+    )
+
+    return {
+        "leaderboard": [
+            {"wallet": r[0], "total_units": float(r[1])}
+            for r in rows
+        ]
+    }
+
+
 @app.get("/api/getEnergyLogs")
 def get_energy_logs(wallet: str = Query(...), skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """
-    Fetch stored energy logs for a wallet (off-chain DB).
-    """
-    wallet = wallet.lower()
-    rows = db.query(EnergyLog).filter(EnergyLog.wallet == wallet).order_by(EnergyLog.id.desc()).offset(skip).limit(limit).all()
+    
+    rows = (
+        db.query(EnergyLog)
+        .filter(EnergyLog.wallet == wallet)
+        .order_by(EnergyLog.id.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
     return {
         "wallet": wallet,
         "count": len(rows),
@@ -170,10 +223,15 @@ def get_energy_logs(wallet: str = Query(...), skip: int = 0, limit: int = 100, d
                 "device_id": r.device_id,
                 "units": r.units,
                 "device_timestamp": r.device_timestamp,
-                "received_at": r.received_at.isoformat()
-            } for r in rows
-        ]
+                "received_at": r.received_at.isoformat(),
+                "tx_hash": r.tx_hash,
+                "token_id": r.token_id,
+                "token_uri": r.token_uri,
+            }
+            for r in rows
+        ],
     }
+
 
 # Existing token management endpoints (useful for admin + testing)
 
@@ -202,14 +260,35 @@ def transfer_token(req: TransferRequest):
     except Exception as ex:
         raise HTTPException(status_code=500, detail=str(ex))
 
+# @app.get("/api/balance") 
+# def get_balance(account: str = Query(...)): 
+#     try: 
+#         bal = contract.functions.balanceOf(Web3.to_checksum_address(account)).call() # return human readable (divide by 1e18) 
+#         return {"account": account, "balance_raw": str(bal), "balance_tokens": str(bal // (10 ** 18))} 
+#     except Exception as ex: 
+#         raise HTTPException(status_code=400, detail=str(ex))
+
 @app.get("/api/balance")
-def get_balance(account: str = Query(...)):
-    try:
-        bal = contract.functions.balanceOf(Web3.to_checksum_address(account)).call()
-        # return human readable (divide by 1e18)
-        return {"account": account, "balance_raw": str(bal), "balance_tokens": str(bal // (10 ** 18))}
-    except Exception as ex:
-        raise HTTPException(status_code=400, detail=str(ex))
+def balance(wallet: str = Query(...), db: Session = Depends(get_db)):
+    # total units the user has produced
+    total_units = (
+        db.query(func.sum(EnergyLog.units))
+        .filter(EnergyLog.wallet == wallet)
+        .scalar()
+    ) or 0
+
+    # number of NFT certificates (same as number of rows logged for this wallet)
+    nft_count = (
+        db.query(func.count(EnergyLog.id))
+        .filter(EnergyLog.wallet == wallet)
+        .scalar()
+    ) or 0
+
+    return {
+        "wallet": wallet,
+        "nft_count": nft_count,
+        "total_spendable_units": int(total_units)
+    }
 
 @app.get("/api/totalSupply")
 def total_supply():
