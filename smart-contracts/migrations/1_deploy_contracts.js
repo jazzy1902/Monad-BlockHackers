@@ -1,5 +1,6 @@
-const GreenToken = artifacts.require("GreenToken");
+const GreenEnergyToken = artifacts.require("GreenEnergyToken");
 
-module.exports = function (deployer) {
-  deployer.deploy(GreenToken);
+module.exports = async function (deployer, network, accounts) {
+  const initialOwner = accounts[0];
+  await deployer.deploy(GreenEnergyToken, initialOwner);
 };
