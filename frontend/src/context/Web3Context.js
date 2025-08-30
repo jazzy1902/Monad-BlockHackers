@@ -23,7 +23,6 @@ export const Web3Provider = ({ children }) => {
   const toChecksumAddress = (address) => {
     if (!address) return "";
     try {
-      // Use Web3's built-in checksum function
       return Web3.utils.toChecksumAddress(address);
     } catch (error) {
       console.error("Error converting to checksum address:", error);
@@ -42,6 +41,8 @@ export const Web3Provider = ({ children }) => {
       const balanceWei = await web3Instance.eth.getBalance(userAccount);
       const balanceEth = web3Instance.utils.fromWei(balanceWei, "ether");
       setBalance(parseFloat(balanceEth).toFixed(4));
+
+      console.log(`[2025-08-30 12:23:11] Balance updated: ${balanceEth} ETH`);
     } catch (error) {
       console.error("Error getting balance:", error);
       setBalance("0");
@@ -79,8 +80,11 @@ export const Web3Provider = ({ children }) => {
       const userAccount = toChecksumAddress(accounts[0]);
       setAccount(userAccount);
 
-      console.log("Raw address from MetaMask:", accounts[0]);
-      console.log("Checksum address:", userAccount);
+      console.log(
+        `[2025-08-30 12:23:11] Raw address from MetaMask:`,
+        accounts[0]
+      );
+      console.log(`[2025-08-30 12:23:11] Checksum address:`, userAccount);
 
       // Get chain ID
       const currentChainId = await web3Instance.eth.getChainId();
@@ -93,10 +97,10 @@ export const Web3Provider = ({ children }) => {
       localStorage.setItem("walletConnected", "true");
       localStorage.setItem("connectedAccount", userAccount);
 
-      console.log("Successfully connected to MetaMask:", {
+      console.log(`[2025-08-30 12:23:11] Successfully connected to MetaMask:`, {
         account: userAccount,
         chainId: currentChainId,
-        timestamp: "2025-08-30 11:43:35",
+        user: "imangi-iit",
       });
     } catch (error) {
       console.error("Failed to connect wallet:", error);
@@ -122,7 +126,9 @@ export const Web3Provider = ({ children }) => {
     setError(null);
     localStorage.removeItem("walletConnected");
     localStorage.removeItem("connectedAccount");
-    console.log("Wallet disconnected at 2025-08-30 11:43:35");
+    console.log(
+      `[2025-08-30 12:23:11] Wallet disconnected for user: imangi-iit`
+    );
   };
 
   // Check for existing connection
@@ -141,21 +147,19 @@ export const Web3Provider = ({ children }) => {
         });
 
         if (accounts.length > 0) {
-          // Convert current account to checksum
           const currentAccount = toChecksumAddress(accounts[0]);
           const storedChecksum = toChecksumAddress(storedAccount);
 
-          console.log("Checking connection:");
-          console.log("- Stored account:", storedAccount);
-          console.log("- Stored checksum:", storedChecksum);
-          console.log("- Current raw account:", accounts[0]);
-          console.log("- Current checksum account:", currentAccount);
+          console.log(`[2025-08-30 12:23:11] Checking MetaMask connection:`, {
+            storedAccount: storedAccount,
+            currentAccount: currentAccount,
+            match: currentAccount === storedChecksum,
+          });
 
-          // Compare checksummed addresses
           if (currentAccount === storedChecksum) {
             const web3Instance = new Web3(window.ethereum);
             setWeb3(web3Instance);
-            setAccount(currentAccount); // Use checksum address
+            setAccount(currentAccount);
 
             const currentChainId = await web3Instance.eth.getChainId();
             setChainId(currentChainId);
@@ -163,21 +167,19 @@ export const Web3Provider = ({ children }) => {
             await getUserBalance(web3Instance, currentAccount);
 
             console.log(
-              "Auto-connected to previously connected account:",
-              currentAccount
+              `[2025-08-30 12:23:11] Auto-connected to MetaMask account: ${currentAccount}`
             );
-            console.log("Connection restored at 2025-08-30 11:43:35");
           } else {
             console.log("Account mismatch, disconnecting");
             disconnectWallet();
           }
         } else {
-          console.log("No accounts available, disconnecting");
+          console.log("No MetaMask accounts available, disconnecting");
           disconnectWallet();
         }
       }
     } catch (error) {
-      console.error("Failed to check connection:", error);
+      console.error("Failed to check MetaMask connection:", error);
       disconnectWallet();
     }
   };
@@ -224,12 +226,12 @@ export const Web3Provider = ({ children }) => {
 
     // Account change handler
     const handleAccountsChanged = (accounts) => {
-      console.log("Accounts changed at 2025-08-30 11:43:35:", accounts);
+      console.log(`[2025-08-30 12:23:11] MetaMask accounts changed:`, accounts);
       if (accounts.length === 0) {
         disconnectWallet();
       } else {
         const newAccount = toChecksumAddress(accounts[0]);
-        console.log("New account (checksum):", newAccount);
+        console.log("New MetaMask account (checksum):", newAccount);
 
         if (newAccount !== account) {
           setAccount(newAccount);
@@ -243,19 +245,19 @@ export const Web3Provider = ({ children }) => {
 
     // Chain change handler
     const handleChainChanged = (newChainId) => {
-      console.log("Chain changed at 2025-08-30 11:43:35:", newChainId);
+      console.log(`[2025-08-30 12:23:11] Chain changed:`, newChainId);
       setChainId(parseInt(newChainId, 16));
       window.location.reload();
     };
 
     // Connect handler
     const handleConnect = (connectInfo) => {
-      console.log("MetaMask connected at 2025-08-30 11:43:35:", connectInfo);
+      console.log(`[2025-08-30 12:23:11] MetaMask connected:`, connectInfo);
     };
 
     // Disconnect handler
     const handleDisconnect = (error) => {
-      console.log("MetaMask disconnected at 2025-08-30 11:43:35:", error);
+      console.log(`[2025-08-30 12:23:11] MetaMask disconnected:`, error);
       disconnectWallet();
     };
 
@@ -299,7 +301,7 @@ export const Web3Provider = ({ children }) => {
     switchNetwork,
     addNetwork,
     formatAddress,
-    toChecksumAddress, // Export this utility
+    toChecksumAddress,
 
     // Utilities
     clearError: () => setError(null),

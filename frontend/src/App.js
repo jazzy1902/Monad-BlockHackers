@@ -1,52 +1,63 @@
-import React, { useState } from "react";
-import { ThemeProvider as StyledThemeProvider } from "styled-components";
-import { ThemeProvider, useTheme } from "./context/ThemeContext";
+import React from "react";
+import { ThemeProvider } from "styled-components";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { ThemeContextProvider } from "./context/ThemeContext";
 import { Web3Provider } from "./context/Web3Context";
-import { GlobalStyles } from "./styles/GlobalStyles";
+import { StreakProvider } from "./context/StreakContext";
+import { MarketplaceProvider } from "./context/MarketplaceContext";
 import { Layout } from "./components/Layout/Layout";
 import { Home } from "./pages/Home/Home";
-import { Leaderboard } from "./pages/Leaderboard/Leaderboard";
-import { EnergyUsage } from "./pages/EnergyUsage/EnergyUsage";
 import { EnergyGenerated } from "./pages/EnergyGenerated/EnergyGenerated";
+import { EnergyUsage } from "./pages/EnergyUsage/EnergyUsage";
+import { Leaderboard } from "./pages/Leaderboard/Leaderboard";
+import { Marketplace } from "./pages/Marketplace/Marketplace";
+import { GlobalStyles } from "./styles/GlobalStyles";
+import { lightTheme, darkTheme } from "./styles/themes";
+import { ScrollToTop } from "./components/ScrollToTop/ScrollToTop";
+import { useTheme } from "./context/ThemeContext";
 
-const AppContent = () => {
-  const { theme } = useTheme();
-  const [currentPage, setCurrentPage] = useState("home");
-
-  const handleNavigation = (page) => {
-    setCurrentPage(page);
-  };
-
-  const renderCurrentPage = () => {
-    switch (currentPage) {
-      case "home":
-        return <Home onNavigate={handleNavigation} />;
-      case "leaderboard":
-        return <Leaderboard />;
-      case "energyUsage":
-        return <EnergyUsage />;
-      case "energyGenerated":
-        return <EnergyGenerated />;
-      default:
-        return <Home onNavigate={handleNavigation} />;
-    }
-  };
+function AppContent() {
+  const { isDark } = useTheme();
 
   return (
-    <StyledThemeProvider theme={theme}>
+    <ThemeProvider theme={isDark ? darkTheme : lightTheme}>
       <GlobalStyles />
-      <Layout onNavigate={handleNavigation}>{renderCurrentPage()}</Layout>
-    </StyledThemeProvider>
+      <Web3Provider>
+        <StreakProvider>
+          <MarketplaceProvider>
+            <Router>
+              <ScrollToTop />
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route
+                    path="/energy-generated"
+                    element={<EnergyGenerated />}
+                  />
+                  <Route path="/energy-usage" element={<EnergyUsage />} />
+                  <Route path="/leaderboard" element={<Leaderboard />} />
+                  <Route path="/marketplace" element={<Marketplace />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Layout>
+            </Router>
+          </MarketplaceProvider>
+        </StreakProvider>
+      </Web3Provider>
+    </ThemeProvider>
   );
-};
+}
 
 function App() {
   return (
-    <ThemeProvider>
-      <Web3Provider>
-        <AppContent />
-      </Web3Provider>
-    </ThemeProvider>
+    <ThemeContextProvider>
+      <AppContent />
+    </ThemeContextProvider>
   );
 }
 

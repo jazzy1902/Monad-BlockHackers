@@ -1181,7 +1181,7 @@ export const Home = ({ onNavigate }) => {
     <>
       <HomeContainer>
         <WelcomeSection>
-          <Title>Welcome to Solar Portal</Title>
+          <Title>Welcome to GreenSol</Title>
           <Subtitle>
             Your comprehensive platform for tracking solar energy generation and power consumption.
             Monitor, analyze, and optimize your energy usage with our advanced analytics dashboard.
@@ -2289,7 +2289,7 @@ cat > public/index.html << 'EOF'
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
-    <title>Solar Portal - Energy Tracking & Analytics</title>
+    <title>GreenSol - Energy Tracking & Analytics</title>
     
     <!-- MetaMask Detection -->
     <script>

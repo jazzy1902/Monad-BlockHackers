@@ -1,99 +1,175 @@
-import React, { useState } from "react";
+import React from "react";
+import { Link } from "react-router-dom";
 import {
   FaSolarPanel,
   FaBolt,
-  FaChartLine,
-  FaLeaf,
   FaTrophy,
-  FaCog,
+  FaShoppingCart,
+  FaArrowRight,
+  FaCoins,
+  FaGift,
 } from "react-icons/fa";
-import { ComingSoon } from "../../components/ComingSoon/ComingSoon";
+import { useWeb3 } from "../../context/Web3Context";
+import { useMarketplace } from "../../context/MarketplaceContext";
 import {
   HomeContainer,
-  WelcomeSection,
-  Title,
-  Subtitle,
+  HeroSection,
+  HeroContent,
+  HeroTitle,
+  HeroSubtitle,
+  CTAButton,
+  FeaturesSection,
   FeatureGrid,
   FeatureCard,
   FeatureIcon,
   FeatureTitle,
   FeatureDescription,
+  MarketplaceSection,
+  MarketplaceHeader,
+  MarketplaceGrid,
+  MarketplaceCard,
+  ProductImage,
+  ProductInfo,
+  ProductName,
+  ProductPrice,
+  TokensSection,
+  TokensDisplay,
+  TokensLabel,
+  QuickActions,
+  ActionButton,
 } from "./Home.styles";
 
-export const Home = ({ onNavigate }) => {
-  const [showComingSoon, setShowComingSoon] = useState(false);
+export const Home = () => {
+  const { isConnected } = useWeb3();
+  const { userTokenBalance, products } = useMarketplace();
 
+  // Featured products for home page
+  const featuredProducts = products.slice(0, 3);
+
+  // Updated features - removed streak
   const features = [
     {
-      icon: <FaTrophy />,
-      title: "Leaderboard",
+      icon: <FaSolarPanel />,
+      title: "Track Energy Generation",
       description:
-        "Compete with other users and see your ranking in solar energy generation and efficiency.",
-      action: () => onNavigate("leaderboard"),
+        "Monitor your solar panel output in real-time with detailed analytics and insights.",
     },
     {
       icon: <FaBolt />,
-      title: "Power Usage Analytics",
+      title: "Manage Energy Usage",
       description:
-        "Keep track of your power consumption patterns and optimize your energy usage.",
-      action: () => onNavigate("energyUsage"),
+        "Optimize your energy consumption patterns and reduce your carbon footprint.",
     },
     {
-      icon: <FaSolarPanel />,
-      title: "Power Generated Analytics",
+      icon: <FaTrophy />,
+      title: "Compete & Lead",
       description:
-        "Monitor your solar panel output in real-time and track energy generation over time.",
-      action: () => onNavigate("energyGenerated"),
+        "Join the leaderboard and compete with other solar energy enthusiasts.",
     },
     {
-      icon: <FaChartLine />,
-      title: "Performance Analytics",
+      icon: <FaShoppingCart />,
+      title: "Redeem Rewards",
       description:
-        "Detailed insights and analytics to help you understand your energy efficiency.",
-      action: () => setShowComingSoon(true),
-    },
-    {
-      icon: <FaLeaf />,
-      title: "Environmental Impact",
-      description:
-        "See how much CO2 you've saved and your positive impact on the environment.",
-      action: () => setShowComingSoon(true),
-    },
-    {
-      icon: <FaCog />,
-      title: "Smart Controls",
-      description:
-        "Automate your energy usage with smart controls and optimization algorithms.",
-      action: () => setShowComingSoon(true),
+        "Use earned tokens to purchase eco-friendly products and services.",
     },
   ];
 
   return (
-    <>
-      <HomeContainer>
-        <WelcomeSection>
-          <Title>Welcome to GreenSol</Title>
-          <Subtitle>
-            Your comprehensive platform for tracking solar energy generation and
-            power consumption. Monitor, analyze, and optimize your energy usage
-            with our advanced analytics dashboard.
-          </Subtitle>
-        </WelcomeSection>
+    <HomeContainer>
+      <HeroSection>
+        <HeroContent>
+          <HeroTitle>☀️ Welcome to Solar Portal</HeroTitle>
+          <HeroSubtitle>
+            Track your solar energy generation, manage consumption, compete with
+            others, and redeem your green achievements for amazing rewards!
+          </HeroSubtitle>
 
+          {isConnected ? (
+            <TokensSection>
+              <TokensDisplay>
+                <FaCoins style={{ fontSize: "2rem" }} />
+                <div>
+                  <div style={{ fontSize: "2rem", fontWeight: "bold" }}>
+                    {userTokenBalance.toLocaleString()}
+                  </div>
+                  <TokensLabel>Available Tokens</TokensLabel>
+                </div>
+              </TokensDisplay>
+
+              <QuickActions>
+                <ActionButton as={Link} to="/marketplace">
+                  <FaShoppingCart />
+                  Shop Marketplace
+                </ActionButton>
+                <ActionButton as={Link} to="/energy-generated">
+                  <FaSolarPanel />
+                  Generate Energy
+                </ActionButton>
+              </QuickActions>
+            </TokensSection>
+          ) : (
+            <CTAButton>Connect your MetaMask wallet to get started!</CTAButton>
+          )}
+        </HeroContent>
+      </HeroSection>
+
+      <FeaturesSection>
+        <h2>🌟 Platform Features</h2>
         <FeatureGrid>
           {features.map((feature, index) => (
-            <FeatureCard key={index} onClick={feature.action}>
+            <FeatureCard key={index}>
               <FeatureIcon>{feature.icon}</FeatureIcon>
               <FeatureTitle>{feature.title}</FeatureTitle>
               <FeatureDescription>{feature.description}</FeatureDescription>
             </FeatureCard>
           ))}
         </FeatureGrid>
-      </HomeContainer>
+      </FeaturesSection>
 
-      {showComingSoon && (
-        <ComingSoon onClose={() => setShowComingSoon(false)} />
+      {isConnected && (
+        <MarketplaceSection>
+          <MarketplaceHeader>
+            <div>
+              <h2>
+                <FaGift />
+                Marketplace Highlights
+              </h2>
+              <p>
+                Redeem your earned tokens for eco-friendly products and rewards
+              </p>
+            </div>
+            <Link to="/marketplace">
+              View All Products <FaArrowRight />
+            </Link>
+          </MarketplaceHeader>
+
+          <MarketplaceGrid>
+            {featuredProducts.map((product) => (
+              <MarketplaceCard key={product.id} as={Link} to="/marketplace">
+                <ProductImage>{product.image}</ProductImage>
+                <ProductInfo>
+                  <ProductName>{product.name}</ProductName>
+                  <ProductPrice>
+                    <FaCoins />
+                    {product.tokenPrice.toLocaleString()} tokens
+                  </ProductPrice>
+                </ProductInfo>
+              </MarketplaceCard>
+            ))}
+          </MarketplaceGrid>
+
+          <div style={{ textAlign: "center", marginTop: "2rem" }}>
+            <p style={{ fontSize: "0.9rem", opacity: 0.8 }}>
+              💡 Generate more energy to earn tokens • 🎯 Complete challenges
+              for bonus rewards
+              <br />
+              <small>
+                Current Time: 2025-08-30 12:24:58 | User: imangi-iit
+              </small>
+            </p>
+          </div>
+        </MarketplaceSection>
       )}
-    </>
+    </HomeContainer>
   );
 };

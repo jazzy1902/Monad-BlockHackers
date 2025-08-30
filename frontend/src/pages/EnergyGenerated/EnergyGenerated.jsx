@@ -12,6 +12,7 @@ import {
   FaExternalLinkAlt,
 } from "react-icons/fa";
 import { useWeb3 } from "../../context/Web3Context";
+import { useStreak } from "../../context/StreakContext";
 import { apiService } from "../../utils/api";
 import {
   EnergyGeneratedContainer,
@@ -57,6 +58,7 @@ export const EnergyGenerated = () => {
   const [loadingMore, setLoadingMore] = useState(false);
 
   const { account, isConnected } = useWeb3();
+  const { updateStreak, markAppOpened } = useStreak();
 
   // Calculate metrics from real data
   const calculateMetrics = (logs) => {
@@ -77,7 +79,7 @@ export const EnergyGenerated = () => {
     );
 
     // Calculate today's generation (filter by device_timestamp)
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const today = "2025-08-30"; // Current date
     const todayLogs = logs.filter((log) => {
       if (!log.device_timestamp) return false;
       const logDate = new Date(log.device_timestamp)
@@ -151,7 +153,7 @@ export const EnergyGenerated = () => {
 
       // SEND ORIGINAL CASE TO API - NO toLowerCase()
       console.log(
-        `Frontend: Fetching energy logs for wallet: ${account} (case preserved)`
+        `[2025-08-30 12:19:49] Frontend: Fetching energy logs for wallet: ${account} (case preserved)`
       );
       const response = await apiService.getEnergyLogs(account, skipCount, 50);
 
@@ -162,8 +164,10 @@ export const EnergyGenerated = () => {
 
         if (isLoadMore) {
           setEnergyLogs((prev) => [...prev, ...newLogs]);
+          updateStreak([...energyLogs, ...newLogs]); // Update streak with all logs
         } else {
           setEnergyLogs(newLogs);
+          updateStreak(newLogs); // Update streak with new logs
         }
 
         setTotalCount(response.count || 0);
@@ -194,6 +198,7 @@ export const EnergyGenerated = () => {
   // Initial load when wallet connects
   useEffect(() => {
     if (isConnected && account) {
+      markAppOpened(); // Mark app as opened for streak tracking
       setSkip(0);
       fetchEnergyLogs(0, false);
     } else {
@@ -274,7 +279,7 @@ export const EnergyGenerated = () => {
     {
       title: "Generated Today",
       value: `${metrics.todayGenerated} kWh`,
-      change: new Date().toLocaleDateString(),
+      change: "2025-08-30",
       positive: null,
       icon: <FaSun />,
     },
@@ -372,7 +377,7 @@ export const EnergyGenerated = () => {
               <LogCondition $condition={getEfficiencyStatus(log.units)}>
                 {log.tx_hash ? (
                   <TxHashLink
-                    href={`https://testnet.monadexplorer.com/tx/0x${log.tx_hash}`}
+                    href={`https://testnet.monadexplorer.com/tx/${log.tx_hash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     title="View transaction on Monad Explorer"
@@ -423,11 +428,11 @@ export const EnergyGenerated = () => {
             color: "#666",
           }}
         >
-          <strong>Debug Info:</strong>
+          <strong>Debug Info (2025-08-30 12:19:49):</strong>
           <br />
           API Endpoint: http://10.14.195.232:8000/api/getEnergyLogs
           <br />
-          Current Time (UTC): 2025-08-30 11:34:33
+          Current Time (UTC): 2025-08-30 12:19:49
           <br />
           Wallet (Original Case): {account}
           <br />
@@ -438,6 +443,10 @@ export const EnergyGenerated = () => {
           Total Energy: {metrics.totalGenerated} kWh
           <br />
           Active Devices: {metrics.totalDevices}
+          <br />
+          Today's Generation: {metrics.todayGenerated} kWh
+          <br />
+          CO₂ Saved: {metrics.co2Saved} kg
         </div>
       )}
     </EnergyGeneratedContainer>

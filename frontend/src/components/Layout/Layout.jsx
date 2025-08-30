@@ -1,16 +1,14 @@
-import React from 'react';
-import { Header } from '../Header/Header';
-import { ScrollToTop } from '../ScrollToTop/ScrollToTop';
-import { LayoutContainer, MainContent } from './Layout.styles';
+import React from "react";
+import { Header } from "../Header/Header";
+import { Footer } from "../Footer/Footer";
+import { LayoutContainer, MainContent } from "./Layout.styles";
 
-export const Layout = ({ children, onNavigate }) => {
+export const Layout = ({ children }) => {
   return (
     <LayoutContainer>
-      <Header onNavigate={onNavigate} />
-      <MainContent>
-        {children}
-      </MainContent>
-      <ScrollToTop />
+      <Header />
+      <MainContent>{children}</MainContent>
+      <Footer />
     </LayoutContainer>
   );
 };

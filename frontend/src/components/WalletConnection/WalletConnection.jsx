@@ -1,87 +1,58 @@
-import React, { useState } from "react";
-import {
-  FaWallet,
-  FaCheckCircle,
-  FaExclamationTriangle,
-  FaExternalLinkAlt,
-} from "react-icons/fa";
+import React from "react";
+import { FaWallet, FaSpinner } from "react-icons/fa";
 import { useWeb3 } from "../../context/Web3Context";
 import {
   WalletButton,
-  LoadingSpinner,
+  WalletButtonContent,
   ErrorMessage,
-  ConnectedInfo,
-  BalanceDisplay,
 } from "./WalletConnection.styles";
 
 export const WalletConnection = () => {
-  const {
-    isConnected,
-    isConnecting,
-    connectWallet,
-    formatAddress,
-    account,
-    balance,
-    error,
-    clearError,
-    isMetaMaskInstalled,
-  } = useWeb3();
+  const { connectWallet, isConnecting, error, isMetaMaskInstalled } = useWeb3();
 
-  const [showError, setShowError] = useState(false);
-
-  const handleConnect = async () => {
-    try {
-      clearError();
-      await connectWallet();
-    } catch (err) {
-      setShowError(true);
-      setTimeout(() => setShowError(false), 5000); // Hide error after 5 seconds
-    }
-  };
-
-  if (isConnected) {
+  if (!isMetaMaskInstalled) {
     return (
-      <ConnectedInfo>
-        <FaCheckCircle />
-        <div>
-          <div>{formatAddress(account)}</div>
-          <BalanceDisplay>{balance} ETH</BalanceDisplay>
-        </div>
-      </ConnectedInfo>
+      <div>
+        <WalletButton
+          onClick={() => window.open("https://metamask.io/download/", "_blank")}
+        >
+          <WalletButtonContent>
+            <FaWallet />
+            Install MetaMask
+          </WalletButtonContent>
+        </WalletButton>
+        <ErrorMessage>
+          MetaMask extension is required to use this application
+        </ErrorMessage>
+      </div>
     );
   }
 
   return (
-    <>
+    <div>
       <WalletButton
-        onClick={handleConnect}
+        onClick={connectWallet}
         disabled={isConnecting}
-        $isMetaMaskInstalled={isMetaMaskInstalled}
+        $isConnecting={isConnecting}
       >
-        {isConnecting ? (
-          <>
-            <LoadingSpinner />
-            Connecting...
-          </>
-        ) : !isMetaMaskInstalled ? (
-          <>
-            <FaExternalLinkAlt />
-            Install MetaMask
-          </>
-        ) : (
-          <>
-            <FaWallet />
-            Connect Wallet
-          </>
-        )}
+        <WalletButtonContent $isSpinning={isConnecting}>
+          {isConnecting ? <FaSpinner /> : <FaWallet />}
+          {isConnecting ? "Connecting..." : "Connect MetaMask"}
+        </WalletButtonContent>
       </WalletButton>
 
-      {(error || showError) && (
-        <ErrorMessage>
-          <FaExclamationTriangle />
-          {error || "Connection failed"}
-        </ErrorMessage>
-      )}
-    </>
+      {error && <ErrorMessage>{error}</ErrorMessage>}
+
+      <div
+        style={{
+          fontSize: "0.7rem",
+          opacity: 0.6,
+          marginTop: "0.5rem",
+          textAlign: "center",
+        }}
+      >
+        Time: 2025-08-30 12:23:11 | User: imangi-iit
+      </div>
+    </div>
   );
 };

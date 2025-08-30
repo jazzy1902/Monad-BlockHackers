@@ -1,65 +1,145 @@
 import React, { useState } from "react";
-import { FaSolarPanel } from "react-icons/fa";
-import { ThemeToggle } from "../ThemeToggle/ThemeToggle";
+import { Link, useLocation } from "react-router-dom";
+import {
+  FaHome,
+  FaSolarPanel,
+  FaBolt,
+  FaTrophy,
+  FaShoppingCart,
+  FaCoins,
+  FaBars,
+  FaTimes,
+  FaSun,
+  FaMoon,
+} from "react-icons/fa";
+import { useWeb3 } from "../../context/Web3Context";
+import { useMarketplace } from "../../context/MarketplaceContext";
+import { useTheme } from "../../context/ThemeContext";
 import { WalletConnection } from "../WalletConnection/WalletConnection";
 import { UserDropdown } from "../UserDropdown/UserDropdown";
-import { ComingSoon } from "../ComingSoon/ComingSoon";
-import { useWeb3 } from "../../context/Web3Context";
+import { ShoppingCart } from "../Marketplace/ShoppingCart";
 import {
   HeaderContainer,
   HeaderContent,
   Logo,
-  Nav,
+  Navigation,
   NavItem,
-  RightSection,
+  NavLink,
+  MobileMenuButton,
+  MobileMenu,
+  UserSection,
+  TokenBalance,
+  CartButton,
+  CartBadge,
+  ThemeToggle,
 } from "./Header.styles";
 
-export const Header = ({ onNavigate }) => {
-  const [showComingSoon, setShowComingSoon] = useState(false);
+export const Header = () => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const location = useLocation();
   const { isConnected } = useWeb3();
+  const { userTokenBalance, cart } = useMarketplace();
+  const { isDark, toggleTheme } = useTheme();
 
-  const handleNavigation = (page) => {
-    if (["leaderboard", "energyUsage", "energyGenerated"].includes(page)) {
-      onNavigate(page);
-    } else {
-      setShowComingSoon(true);
-    }
-  };
+  // Updated navigation items - removed streak
+  const navigationItems = [
+    { path: "/", label: "Home", icon: <FaHome /> },
+    { path: "/energy-generated", label: "Generated", icon: <FaSolarPanel /> },
+    { path: "/energy-usage", label: "Usage", icon: <FaBolt /> },
+    { path: "/leaderboard", label: "Leaderboard", icon: <FaTrophy /> },
+    { path: "/marketplace", label: "Marketplace", icon: <FaShoppingCart /> },
+  ];
+
+  const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
 
   return (
-    <>
-      <HeaderContainer>
-        <HeaderContent>
-          <Logo
-            onClick={() => onNavigate("home")}
-            style={{ cursor: "pointer" }}
-          >
-            <FaSolarPanel />
-            GreenSol
-          </Logo>
+    <HeaderContainer>
+      <HeaderContent>
+        <Logo>
+          <Link to="/">☀️ Solar Portal</Link>
+        </Logo>
 
-          <Nav>
-            <NavItem onClick={() => handleNavigation("leaderboard")}>
-              Leaderboard
+        <Navigation>
+          {navigationItems.map((item) => (
+            <NavItem key={item.path}>
+              <NavLink
+                as={Link}
+                to={item.path}
+                $isActive={location.pathname === item.path}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </NavLink>
             </NavItem>
-            <NavItem onClick={() => handleNavigation("energyUsage")}>
-              Energy Usage
-            </NavItem>
-            <NavItem onClick={() => handleNavigation("energyGenerated")}>
-              Energy Generated
-            </NavItem>
-          </Nav>
+          ))}
+        </Navigation>
 
-          <RightSection>
-            {!isConnected ? <WalletConnection /> : <UserDropdown />}
-            <ThemeToggle />
-          </RightSection>
-        </HeaderContent>
-      </HeaderContainer>
+        <UserSection>
+          {isConnected && (
+            <>
+              <TokenBalance>
+                <FaCoins />
+                {userTokenBalance.toLocaleString()} tokens
+              </TokenBalance>
 
-      {showComingSoon && (
-        <ComingSoon onClose={() => setShowComingSoon(false)} />
-      )}
-    </>
+              <CartButton onClick={() => setIsCartOpen(true)}>
+                <FaShoppingCart />
+                {cartItemCount > 0 && <CartBadge>{cartItemCount}</CartBadge>}
+              </CartButton>
+            </>
+          )}
+
+          <ThemeToggle onClick={toggleTheme}>
+            {isDark ? <FaSun /> : <FaMoon />}
+          </ThemeToggle>
+
+          {isConnected ? <UserDropdown /> : <WalletConnection />}
+        </UserSection>
+
+        <MobileMenuButton
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
+        </MobileMenuButton>
+
+        <MobileMenu $isOpen={isMobileMenuOpen}>
+          {navigationItems.map((item) => (
+            <NavLink
+              key={item.path}
+              as={Link}
+              to={item.path}
+              $isActive={location.pathname === item.path}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </NavLink>
+          ))}
+
+          {isConnected && (
+            <TokenBalance style={{ margin: "1rem 0" }}>
+              <FaCoins />
+              {userTokenBalance.toLocaleString()} tokens
+            </TokenBalance>
+          )}
+        </MobileMenu>
+      </HeaderContent>
+
+      <ShoppingCart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+
+      <div
+        style={{
+          position: "absolute",
+          bottom: "-20px",
+          right: "10px",
+          fontSize: "0.6rem",
+          opacity: 0.4,
+          pointerEvents: "none",
+        }}
+      >
+        2025-08-30 12:24:58 | imangi-iit
+      </div>
+    </HeaderContainer>
   );
 };
