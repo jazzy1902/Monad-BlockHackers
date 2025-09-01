@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { FaSearch, FaShoppingCart, FaCoins, FaFilter } from "react-icons/fa";
+import {
+  FaSearch,
+  FaShoppingCart,
+  FaCoins,
+  FaFilter,
+  FaSync,
+  FaGem,
+} from "react-icons/fa";
 import { useMarketplace } from "../../context/MarketplaceContext";
 import { useWeb3 } from "../../context/Web3Context";
 import { ProductCard } from "../../components/Marketplace/ProductCard";
@@ -25,6 +32,7 @@ export const Marketplace = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const {
     userTokenBalance,
+    nftCount,
     cart,
     filteredProducts,
     categories,
@@ -33,9 +41,11 @@ export const Marketplace = () => {
     setSelectedCategory,
     setSearchQuery,
     loading,
+    balanceLoading,
+    refreshTokenBalance,
   } = useMarketplace();
 
-  const { isConnected } = useWeb3();
+  const { isConnected, account } = useWeb3();
   const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
 
   if (!isConnected) {
@@ -68,13 +78,67 @@ export const Marketplace = () => {
           <p>Redeem your earned tokens for eco-friendly products and rewards</p>
         </div>
 
-        <TokenBalance>
-          <FaCoins />
-          <div>
-            <div>{userTokenBalance.toLocaleString()}</div>
-            <small>Available Tokens</small>
-          </div>
-        </TokenBalance>
+        <div style={{ display: "flex", gap: "1rem", alignItems: "flex-end" }}>
+          <TokenBalance>
+            <FaCoins />
+            <div>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+              >
+                {balanceLoading
+                  ? "Loading..."
+                  : userTokenBalance.toLocaleString()}
+                <button
+                  onClick={refreshTokenBalance}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "inherit",
+                    cursor: "pointer",
+                    padding: "0.2rem",
+                    borderRadius: "50%",
+                    transition: "all 0.3s ease",
+                  }}
+                  title="Refresh balance"
+                >
+                  <FaSync
+                    style={{
+                      fontSize: "0.8rem",
+                      animation: balanceLoading
+                        ? "spin 1s linear infinite"
+                        : "none",
+                    }}
+                  />
+                </button>
+              </div>
+              <small>Spendable Units</small>
+            </div>
+          </TokenBalance>
+
+          {nftCount > 0 && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                background: "linear-gradient(135deg, #ff6b6b, #feca57)",
+                color: "white",
+                padding: "1rem 1.5rem",
+                borderRadius: "15px",
+                fontWeight: "600",
+                border: "2px solid transparent",
+              }}
+            >
+              <FaGem style={{ fontSize: "1.2rem" }} />
+              <div>
+                <div style={{ fontSize: "1.2rem" }}>{nftCount}</div>
+                <small style={{ fontSize: "0.8rem", opacity: 0.9 }}>
+                  NFT{nftCount !== 1 ? "s" : ""} Owned
+                </small>
+              </div>
+            </div>
+          )}
+        </div>
       </MarketplaceHeader>
 
       <SearchAndFilter>
@@ -133,14 +197,37 @@ export const Marketplace = () => {
           color: "#666",
         }}
       >
-        <h3 style={{ marginBottom: "1rem" }}>💡 How to earn more tokens:</h3>
-        <p>• Generate 3+ kWh of solar energy daily</p>
-        <p>• Maintain your energy generation streak</p>
-        <p>• Open the app daily to stay engaged</p>
-        <p>• Complete special challenges and achievements</p>
+        <h3 style={{ marginBottom: "1rem" }}>💡 Your Solar Energy Stats:</h3>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: "2rem",
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <strong>{userTokenBalance.toLocaleString()}</strong>
+            <br />
+            <small>Spendable Units</small>
+          </div>
+          <div>
+            <strong>{nftCount}</strong>
+            <br />
+            {/* <small>NFTs Owned</small> */}
+          </div>
+        </div>
+        <br />
+        <p>• Generate solar energy and log it to earn more spendable units</p>
+        <p>• NFTs represent your energy generation achievements</p>
+        <p>• Maintain consistent energy production for bonus rewards</p>
         <br />
         <small>
-          Last updated: 2025-08-30 11:54:38 UTC | User: imangi-iit
+          Balance API: 10.14.195.232:8000/api/balance | Wallet: {account}
+          <br />
+          Response format: total_spendable_units, nft_count, wallet
+          <br />
+          Last updated: 2025-08-30 12:31:32 | User: imangi-iit
           <br />
           🌱 Every purchase supports renewable energy initiatives
         </small>

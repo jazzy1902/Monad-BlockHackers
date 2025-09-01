@@ -33,7 +33,7 @@ export const Footer = () => {
         <FooterMain>
           <FooterBrand>
             <FaSun style={{ fontSize: "2rem", marginBottom: "0.5rem" }} />
-            <h3>Solar Portal</h3>
+            <h3>GreenSol</h3>
             <FooterTagline>
               Powering the future, one ray at a time ☀️
             </FooterTagline>
@@ -84,16 +84,22 @@ export const Footer = () => {
 
         <FooterBottom>
           <Copyright>
-            © 2025 Solar Portal - Vibe Tech Solutions
+            © 2025 GreenSol - Vibe Tech Solutions
             <br />
             <small>Making renewable energy accessible to everyone</small>
           </Copyright>
 
           <SocialLinks>
-            <SocialLink href="#" title="GitHub">
+            <SocialLink
+              href="https://github.com/jazzy1902/Monad-BlockHackers"
+              title="GitHub"
+            >
               <FaGithub />
             </SocialLink>
-            <SocialLink href="#" title="LinkedIn">
+            <SocialLink
+              href="https://www.linkedin.com/in/vidit-parikh/"
+              title="LinkedIn"
+            >
               <FaLinkedin />
             </SocialLink>
           </SocialLinks>

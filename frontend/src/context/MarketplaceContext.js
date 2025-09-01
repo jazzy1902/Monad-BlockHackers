@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useWeb3 } from "./Web3Context";
+import { apiService } from "../utils/api";
 
 const MarketplaceContext = createContext();
 
@@ -11,7 +12,7 @@ export const useMarketplace = () => {
   return context;
 };
 
-// Mock product catalog
+// Mock product catalog (unchanged)
 const PRODUCT_CATALOG = [
   {
     id: "solar_panel_100w",
@@ -155,20 +156,94 @@ const CATEGORIES = [
 
 export const MarketplaceProvider = ({ children }) => {
   const [userTokenBalance, setUserTokenBalance] = useState(0);
+  const [nftCount, setNftCount] = useState(0);
   const [cart, setCart] = useState([]);
   const [orders, setOrders] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [balanceLoading, setBalanceLoading] = useState(false);
 
   const { account, isConnected } = useWeb3();
 
-  // Calculate user token balance based on energy generation
-  // For demo: 1 kWh = 10 tokens, plus bonus tokens from streaks
-  const calculateTokenBalance = (energyGenerated, streakBonus = 0) => {
-    const baseTokens = Math.floor(energyGenerated * 10);
-    const totalTokens = baseTokens + streakBonus;
-    return totalTokens;
+  // Fetch real token balance from API
+  const fetchTokenBalance = async () => {
+    if (!account) {
+      setUserTokenBalance(0);
+      setNftCount(0);
+      return;
+    }
+
+    try {
+      setBalanceLoading(true);
+      console.log(
+        `[2025-08-30 12:31:32] Fetching token balance for wallet: ${account}`
+      );
+
+      const response = await apiService.getTokenBalance(account);
+
+      console.log(`[2025-08-30 12:31:32] Balance API Response:`, response);
+
+      if (response && typeof response.total_spendable_units !== "undefined") {
+        const balance = parseInt(response.total_spendable_units || 0);
+        // const nfts = parseInt(response.nft_count || 0);
+
+        setUserTokenBalance(balance);
+        // setNftCount(nfts);
+
+        console.log(`[2025-08-30 12:31:32] Token balance updated:`, {
+          wallet: response.wallet,
+          total_spendable_units: balance,
+          // nft_count: nfts,
+          user: "imangi-iit",
+        });
+
+        // Save to localStorage as cache
+        saveUserData({
+          tokenBalance: balance,
+          // nftCount: nfts,
+          lastBalanceUpdate: "2025-08-30 12:31:32",
+        });
+      } else {
+        console.warn("Invalid balance response format:", response);
+        console.warn(
+          "Expected fields: total_spendable_units, nft_count, wallet"
+        );
+        // Fallback to localStorage if API response is invalid
+        loadCachedBalance();
+      }
+    } catch (error) {
+      console.error("Error fetching token balance:", error);
+      // Fallback to localStorage if API fails
+      loadCachedBalance();
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
+
+  // Load cached balance from localStorage as fallback
+  const loadCachedBalance = () => {
+    if (!account) return;
+
+    try {
+      const storageKey = `marketplace_${account}`;
+      const stored = localStorage.getItem(storageKey);
+
+      if (stored) {
+        const data = JSON.parse(stored);
+        if (data.tokenBalance !== undefined) {
+          setUserTokenBalance(data.tokenBalance);
+          setNftCount(data.nftCount || 0);
+          console.log(`[2025-08-30 12:31:32] Loaded cached balance:`, {
+            tokens: data.tokenBalance,
+            // nfts: data.nftCount || 0,
+            lastUpdate: data.lastBalanceUpdate || "unknown",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error loading cached balance:", error);
+    }
   };
 
   // Load user data from localStorage
@@ -181,19 +256,13 @@ export const MarketplaceProvider = ({ children }) => {
 
       if (stored) {
         const data = JSON.parse(stored);
-        setUserTokenBalance(data.tokenBalance || 0);
         setCart(data.cart || []);
         setOrders(data.orders || []);
 
         console.log(
-          `[2025-08-30 11:54:38] Loaded marketplace data for ${account}:`,
+          `[2025-08-30 12:31:32] Loaded marketplace data for ${account}:`,
           data
         );
-      } else {
-        // Initialize with demo tokens for new users
-        const demoTokens = 5000; // Give users some tokens to start with
-        setUserTokenBalance(demoTokens);
-        saveUserData({ tokenBalance: demoTokens });
       }
     } catch (error) {
       console.error("Error loading marketplace data:", error);
@@ -206,17 +275,26 @@ export const MarketplaceProvider = ({ children }) => {
 
     try {
       const storageKey = `marketplace_${account}`;
+      const currentData = localStorage.getItem(storageKey);
+      let existingData = {};
+
+      if (currentData) {
+        existingData = JSON.parse(currentData);
+      }
+
       const saveData = {
+        ...existingData,
         tokenBalance: userTokenBalance,
+        nftCount: nftCount,
         cart,
         orders,
-        lastUpdated: "2025-08-30 11:54:38",
+        lastUpdated: "2025-08-30 12:31:32",
         ...data,
       };
 
       localStorage.setItem(storageKey, JSON.stringify(saveData));
       console.log(
-        `[2025-08-30 11:54:38] Saved marketplace data for ${account}:`,
+        `[2025-08-30 12:31:32] Saved marketplace data for ${account}:`,
         saveData
       );
     } catch (error) {
@@ -224,36 +302,33 @@ export const MarketplaceProvider = ({ children }) => {
     }
   };
 
-  // Add tokens to user balance (called when energy is generated)
-  const addTokens = (amount, reason = "Energy Generation") => {
-    const newBalance = userTokenBalance + amount;
-    setUserTokenBalance(newBalance);
-    saveUserData({ tokenBalance: newBalance });
-
+  // Refresh token balance (can be called manually)
+  const refreshTokenBalance = async () => {
     console.log(
-      `[2025-08-30 11:54:38] Added ${amount} tokens for ${reason}. New balance: ${newBalance}`
+      `[2025-08-30 12:31:32] Manual refresh triggered by user: imangi-iit`
     );
-    return newBalance;
+    await fetchTokenBalance();
   };
 
   // Add item to cart
   const addToCart = (product, quantity = 1) => {
     const existingItem = cart.find((item) => item.id === product.id);
 
+    let updatedCart;
     if (existingItem) {
-      const updatedCart = cart.map((item) =>
+      updatedCart = cart.map((item) =>
         item.id === product.id
           ? { ...item, quantity: item.quantity + quantity }
           : item
       );
-      setCart(updatedCart);
     } else {
       const newItem = { ...product, quantity };
-      setCart([...cart, newItem]);
+      updatedCart = [...cart, newItem];
     }
 
-    saveUserData({ cart: cart });
-    console.log(`[2025-08-30 11:54:38] Added ${product.name} to cart`);
+    setCart(updatedCart);
+    saveUserData({ cart: updatedCart });
+    console.log(`[2025-08-30 12:31:32] Added ${product.name} to cart`);
   };
 
   // Remove item from cart
@@ -310,7 +385,7 @@ export const MarketplaceProvider = ({ children }) => {
         totalTokens: cartTotal,
         status: "confirmed",
         orderDate: "2025-08-30",
-        orderTime: "11:54:38",
+        orderTime: "12:31:32",
         estimatedDelivery: "2025-09-06", // 7 days from now
       };
 
@@ -328,7 +403,7 @@ export const MarketplaceProvider = ({ children }) => {
       });
 
       console.log(
-        `[2025-08-30 11:54:38] Order processed successfully:`,
+        `[2025-08-30 12:31:32] Order processed successfully:`,
         newOrder
       );
       return newOrder;
@@ -369,22 +444,37 @@ export const MarketplaceProvider = ({ children }) => {
   useEffect(() => {
     if (isConnected && account) {
       loadUserData();
+      fetchTokenBalance(); // Fetch real balance from API
     } else {
       // Reset state when disconnected
       setUserTokenBalance(0);
+      setNftCount(0);
       setCart([]);
       setOrders([]);
     }
   }, [account, isConnected]);
 
+  // Auto-refresh balance every 30 seconds
+  useEffect(() => {
+    if (!isConnected || !account) return;
+
+    const interval = setInterval(() => {
+      fetchTokenBalance();
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [account, isConnected]);
+
   const value = {
     // State
     userTokenBalance,
+    nftCount,
     cart,
     orders,
     selectedCategory,
     searchQuery,
     loading,
+    balanceLoading,
 
     // Product data
     products: PRODUCT_CATALOG,
@@ -392,7 +482,6 @@ export const MarketplaceProvider = ({ children }) => {
     filteredProducts: getFilteredProducts(),
 
     // Methods
-    addTokens,
     addToCart,
     removeFromCart,
     updateCartQuantity,
@@ -400,9 +489,10 @@ export const MarketplaceProvider = ({ children }) => {
     getCartTotal,
     setSelectedCategory,
     setSearchQuery,
+    refreshTokenBalance,
+    fetchTokenBalance,
 
     // Utilities
-    calculateTokenBalance,
     formatTokens: (amount) => amount.toLocaleString(),
   };
 

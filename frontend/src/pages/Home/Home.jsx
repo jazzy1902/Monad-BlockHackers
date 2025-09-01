@@ -78,7 +78,7 @@ export const Home = () => {
     <HomeContainer>
       <HeroSection>
         <HeroContent>
-          <HeroTitle>☀️ Welcome to Solar Portal</HeroTitle>
+          <HeroTitle>☀️ Welcome to GreenSol</HeroTitle>
           <HeroSubtitle>
             Track your solar energy generation, manage consumption, compete with
             others, and redeem your green achievements for amazing rewards!

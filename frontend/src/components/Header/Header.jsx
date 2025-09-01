@@ -11,6 +11,8 @@ import {
   FaTimes,
   FaSun,
   FaMoon,
+  FaSpinner,
+  FaGem,
 } from "react-icons/fa";
 import { useWeb3 } from "../../context/Web3Context";
 import { useMarketplace } from "../../context/MarketplaceContext";
@@ -39,10 +41,15 @@ export const Header = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const location = useLocation();
   const { isConnected } = useWeb3();
-  const { userTokenBalance, cart } = useMarketplace();
+  const {
+    userTokenBalance,
+    nftCount,
+    cart,
+    balanceLoading,
+    refreshTokenBalance,
+  } = useMarketplace();
   const { isDark, toggleTheme } = useTheme();
 
-  // Updated navigation items - removed streak
   const navigationItems = [
     { path: "/", label: "Home", icon: <FaHome /> },
     { path: "/energy-generated", label: "Generated", icon: <FaSolarPanel /> },
@@ -57,7 +64,7 @@ export const Header = () => {
     <HeaderContainer>
       <HeaderContent>
         <Logo>
-          <Link to="/">☀️ Solar Portal</Link>
+          <Link to="/">☀️ GreenSol</Link>
         </Logo>
 
         <Navigation>
@@ -78,10 +85,39 @@ export const Header = () => {
         <UserSection>
           {isConnected && (
             <>
-              <TokenBalance>
-                <FaCoins />
-                {userTokenBalance.toLocaleString()} tokens
+              <TokenBalance
+                onClick={refreshTokenBalance}
+                style={{ cursor: "pointer" }}
+                title="Click to refresh balance"
+              >
+                {balanceLoading ? (
+                  <FaSpinner style={{ animation: "spin 1s linear infinite" }} />
+                ) : (
+                  <FaCoins />
+                )}
+                {balanceLoading
+                  ? "Loading..."
+                  : `${userTokenBalance.toLocaleString()} tokens`}
               </TokenBalance>
+
+              {nftCount > 0 && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.3rem",
+                    background: "linear-gradient(135deg, #ff6b6b, #feca57)",
+                    color: "white",
+                    padding: "0.4rem 0.8rem",
+                    borderRadius: "15px",
+                    fontSize: "0.8rem",
+                    fontWeight: "600",
+                  }}
+                >
+                  <FaGem />
+                  {nftCount} NFT{nftCount !== 1 ? "s" : ""}
+                </div>
+              )}
 
               <CartButton onClick={() => setIsCartOpen(true)}>
                 <FaShoppingCart />
@@ -118,10 +154,32 @@ export const Header = () => {
           ))}
 
           {isConnected && (
-            <TokenBalance style={{ margin: "1rem 0" }}>
-              <FaCoins />
-              {userTokenBalance.toLocaleString()} tokens
-            </TokenBalance>
+            <>
+              <TokenBalance
+                style={{ margin: "1rem 0" }}
+                onClick={refreshTokenBalance}
+              >
+                {balanceLoading ? <FaSpinner /> : <FaCoins />}
+                {balanceLoading
+                  ? "Loading..."
+                  : `${userTokenBalance.toLocaleString()} tokens`}
+              </TokenBalance>
+
+              {nftCount > 0 && (
+                <div
+                  style={{
+                    margin: "0.5rem 0",
+                    padding: "0.5rem",
+                    background: "linear-gradient(135deg, #ff6b6b, #feca57)",
+                    color: "white",
+                    borderRadius: "8px",
+                    textAlign: "center",
+                  }}
+                >
+                  <FaGem /> {nftCount} NFT{nftCount !== 1 ? "s" : ""}
+                </div>
+              )}
+            </>
           )}
         </MobileMenu>
       </HeaderContent>
@@ -138,7 +196,7 @@ export const Header = () => {
           pointerEvents: "none",
         }}
       >
-        2025-08-30 12:24:58 | imangi-iit
+        2025-08-30 12:31:32 | imangi-iit
       </div>
     </HeaderContainer>
   );

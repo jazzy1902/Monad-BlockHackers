@@ -16,7 +16,7 @@ class ApiService {
 
     try {
       console.log(
-        `[2025-08-30 12:27:27] 🔗 Nomad Network API: Fetching from: ${url}`
+        `[2025-08-30 12:31:32] 🔗 Nomad Network API: Fetching from: ${url}`
       );
       const response = await fetch(url, config);
 
@@ -27,11 +27,11 @@ class ApiService {
       }
 
       const data = await response.json();
-      console.log(`[2025-08-30 12:27:27] ⚡ Nomad Network API Response:`, data);
+      console.log(`[2025-08-30 12:31:32] ⚡ Nomad Network API Response:`, data);
       return data;
     } catch (error) {
       console.error(
-        `[2025-08-30 12:27:27] ❌ Nomad Network API request failed:`,
+        `[2025-08-30 12:31:32] ❌ Nomad Network API request failed:`,
         error
       );
       throw error;
@@ -46,23 +46,26 @@ class ApiService {
   // Get energy logs for a specific wallet - SEND CHECKSUM ADDRESS
   async getEnergyLogs(wallet, skip = 0, limit = 100) {
     console.log(
-      `[2025-08-30 12:27:27] 🌐 Nomad Network: Getting energy logs for wallet: ${wallet} (checksum address)`
+      `[2025-08-30 12:31:32] 🌐 Nomad Network: Getting energy logs for wallet: ${wallet} (checksum address)`
     );
     console.log(
-      `[2025-08-30 12:27:27] 🔗 Nomad API URL: ${API_BASE_URL}/api/getEnergyLogs?wallet=${wallet}&skip=${skip}&limit=${limit}`
+      `[2025-08-30 12:31:32] 🔗 Nomad API URL: ${API_BASE_URL}/api/getEnergyLogs?wallet=${wallet}&skip=${skip}&limit=${limit}`
     );
     return this.request(
       `/api/getEnergyLogs?wallet=${wallet}&skip=${skip}&limit=${limit}`
     );
   }
 
-  // Get token balance for a specific wallet
+  // Get token balance for a specific wallet - EXPECTS total_spendable_units
   async getTokenBalance(wallet) {
     console.log(
-      `[2025-08-30 12:27:27] 💰 Nomad Network: Getting token balance for wallet: ${wallet} (checksum address)`
+      `[2025-08-30 12:31:32] 💰 Nomad Network: Getting token balance for wallet: ${wallet} (checksum address)`
     );
     console.log(
-      `[2025-08-30 12:27:27] 🔗 Nomad API URL: ${API_BASE_URL}/api/balance?wallet=${wallet}`
+      `[2025-08-30 12:31:32] 🔗 Nomad API URL: ${API_BASE_URL}/api/balance?wallet=${wallet}`
+    );
+    console.log(
+      `[2025-08-30 12:31:32] 📊 Expected response format: { wallet, nft_count, total_spendable_units }`
     );
     return this.request(`/api/balance?wallet=${wallet}`);
   }
