@@ -22,7 +22,7 @@ Each unit of energy produced is represented by an NFT minted on-chain, while off
 * Persists rich energy logs in DB for analytics.
 * Provides endpoints for leaderboard & user history.
 
-### 3. **Frontend (React / Next.js)**
+### 3. **Frontend (React)**
 
 * Connects via MetaMask or WalletConnect.
 * Allows users to view:
