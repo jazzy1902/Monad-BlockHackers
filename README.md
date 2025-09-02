@@ -1,4 +1,4 @@
-````markdown
+
 # 🌱 GreenSol – Hybrid Blockchain Energy Certificates
 
 GreenSol is a **full-stack blockchain project** that allows IoT devices (e.g., ESP32 energy meters) to log renewable energy production and mint verifiable **NFT-based Green Certificates**.  
